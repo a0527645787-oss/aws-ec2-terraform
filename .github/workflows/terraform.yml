@@ -1,0 +1,40 @@
+name: "Terraform Deploy"
+
+# הפעלת הצינור בכל פעם שמבצעים Push (העלאת קוד) למאגר
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  terraform:
+    name: "Terraform Apply"
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. מעתיק את קבצי הקוד מהמאגר אל השרת הזמני של גיטהאב
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. מתקין ומכין את כלי ה-Terraform על השרת הזמני
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      # 3. שלב ה-Init: מחבר את טראפורם ל-AWS ומכין את הסביבה
+      - name: Terraform Init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: terraform init
+
+      # 4. שלב ה-Apply: יוצר את השרת בפועל באמזון עם אישור אוטומטי
+      - name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: terraform apply -auto-approve
